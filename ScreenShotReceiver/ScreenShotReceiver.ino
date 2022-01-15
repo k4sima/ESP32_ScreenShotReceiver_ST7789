@@ -12,15 +12,21 @@ Author:
 
 /----------------------------------------------------------------------------*/
 
-#if defined(ARDUINO_M5Stack_Core_ESP32) || defined(ARDUINO_M5STACK_FIRE)
-#include <M5StackUpdater.h>     // https://github.com/tobozo/M5Stack-SD-Updater/
-#endif
+/*#if defined(ARDUINO_M5Stack_Core_ESP32) || defined(ARDUINO_M5STACK_FIRE)
+#include <M5StackUpdater.h> // https://github.com/tobozo/M5Stack-SD-Updater/
+#endif*/
+
+#define LGFX_AUTODETECT
+#define LGFX_USE_V1
+#include <LovyanGFX.hpp>
 
 #include <esp_wifi.h>
 
 #include "src/TCPReceiver.h"
 
-static LGFX lcd;
+#include <lgfx_user/LGFX_ESP32_ST7789.hpp>
+
+static LGFX_ESP32_ST7789 lcd;
 static TCPReceiver recv;
 
 void setup(void)
@@ -28,19 +34,20 @@ void setup(void)
   Serial.begin(115200);
   Serial.flush();
 
-#if defined ( __M5STACKUPDATER_H )
+  /*#if defined(__M5STACKUPDATER_H)
   M5.begin();
-  #ifdef __M5STACKUPDATER_H
-    if(digitalRead(BUTTON_A_PIN) == 0) {
-       Serial.println("Will Load menu binary");
-       updateFromFS(SD);
-       ESP.restart();
-    }
-  #endif
+#ifdef __M5STACKUPDATER_H
+  if (digitalRead(BUTTON_A_PIN) == 0)
+  {
+    Serial.println("Will Load menu binary");
+    updateFromFS(SD);
+    ESP.restart();
+  }
 #endif
+#endif*/
 
-  lcd.begin();
-//lcd.setColorDepth(24);
+  lcd.init();
+  //lcd.setColorDepth(24);
   lcd.setRotation(0);
   if (lcd.width() < lcd.height())
     lcd.setRotation(1);
@@ -54,18 +61,23 @@ void setup(void)
   WiFi.begin();
 
   // 接続できるまで10秒待機
-  for (int i = 0; WiFi.status() != WL_CONNECTED && i < 100; i++) { delay(100); }
+  for (int i = 0; WiFi.status() != WL_CONNECTED && i < 100; i++)
+  {
+    delay(100);
+  }
 
   // 接続できない場合はSmartConfigを起動
   // https://itunes.apple.com/app/id1071176700
   // https://play.google.com/store/apps/details?id=com.cmmakerclub.iot.esptouch
-  if (WiFi.status() != WL_CONNECTED) {
+  if (WiFi.status() != WL_CONNECTED)
+  {
     Serial.print("SmartConfig start.");
     lcd.println("SmartConfig start.");
     WiFi.mode(WIFI_MODE_APSTA);
     WiFi.beginSmartConfig();
 
-    while (WiFi.status() != WL_CONNECTED) {
+    while (WiFi.status() != WL_CONNECTED)
+    {
       delay(100);
     }
     WiFi.stopSmartConfig();
@@ -75,7 +87,7 @@ void setup(void)
   Serial.println(String("IP:") + WiFi.localIP().toString());
   lcd.println(WiFi.localIP().toString());
 
-  recv.setup( &lcd );
+  recv.setup(&lcd);
 }
 
 void loop(void)
